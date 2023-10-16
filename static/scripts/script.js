@@ -1,22 +1,20 @@
-img_input = document.getElementById("img_input")
+const imgInput = document.getElementById("img_input");
 
-img_input.addEventListener("change", (event) => {
-    image = event.target.files[0]
-    image_data = new FormData();
-    image_data.append('image', image);
-    
+imgInput.addEventListener("change", (event) => {
+    const image = event.target.files[0];
+    const formData = new FormData();
+    formData.append('file', image);
+
     fetch("/vehicle_segment", {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: image_data
+        body: formData
     })
     .then(response => response.blob())
+    .then(blob => {
+        const imgOutput = document.getElementById("img_output");
+        imgOutput.src = URL.createObjectURL(blob);
+    })
     .catch(error => {
         console.error('Error:', error);
     });
-    
-    img_output = document.getElementById("img_output")
-    img_output.src = URL.createObjectURL(response);
-})
+});
