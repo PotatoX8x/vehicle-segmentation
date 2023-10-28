@@ -9,9 +9,11 @@ import numpy as np
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, UploadFile
-from starlette.responses import Response, FileResponse 
+from starlette.responses import Response, FileResponse, JSONResponse
 
 from VehicleSegmentor import VehicleSegmentor
+import json
+import base64
 
 vehicle_segmentor = VehicleSegmentor()
 
@@ -26,7 +28,8 @@ def process_request_image(file):
 def process_response_image(image):
     _, encoded_image = cv2.imencode('.PNG', image)
     encoded_image = encoded_image.tobytes()
-    return encoded_image
+    #encoded_image = base64.b64encode(encoded_image)
+    return encoded_image.decode('ISO-8859-1')
 
 @app.get("/")
 async def read_index():
@@ -37,10 +40,14 @@ async def image_detect(file: UploadFile):
     file = await file.read()
     image = process_request_image(file)
 
-    result = vehicle_segmentor.predict(image)
-
-    encoded_image = process_response_image(result)
-    return Response(encoded_image, media_type="image/png")
+    segmented_image, counted = vehicle_segmentor.predict(image)
+    encoded_image = process_response_image(segmented_image)
+    #return Response(content = encoded_image, headers = counted, media_type="image/png")
+    response = {
+        "image": encoded_image,
+        "predictions": counted
+    }
+    return JSONResponse(content = response, media_type="image/png")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

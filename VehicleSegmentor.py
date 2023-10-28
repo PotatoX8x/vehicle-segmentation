@@ -14,19 +14,21 @@ class VehicleSegmentor:
 
     def classify_image(self, image, conf):
         result = self.model(image, conf=conf)[0]
-
+        if result.masks is None:
+            return None, None, None, None, None
         # detection
-        # result.boxes.xyxy   # box with xyxy format, (N, 4)
-        cls = result.boxes.cls.cpu().numpy()    # cls, (N, 1)
-        probs = result.boxes.conf.cpu().numpy()  # confidence score, (N, 1)
-        boxes = result.boxes.xyxy.cpu().numpy()   # box with xyxy format, (N, 4)
+        cls = result.boxes.cls.cpu().numpy()
+        probs = result.boxes.conf.cpu().numpy() 
+        boxes = result.boxes.xyxy.cpu().numpy() 
         labels = result.names
+
         # segmentation
-        masks = result.masks.data.cpu().numpy()     # masks, (N, H, W)
-        masks = np.moveaxis(masks, 0, -1) # masks, (H, W, N)
+        masks = result.masks.data.cpu().numpy()
+        masks = np.moveaxis(masks, 0, -1)
+
         # rescale masks to original image
         masks = scale_image(masks, result.masks.orig_shape)
-        masks = np.moveaxis(masks, -1, 0) # masks, (N, H, W)
+        masks = np.moveaxis(masks, -1, 0)
 
         return boxes, masks, cls, probs, labels
 
@@ -48,8 +50,10 @@ class VehicleSegmentor:
 
     def predict(self, image):
         boxes, masks, cls, probs, labels = self.classify_image(image, conf=0.60)
-        # counter = Counter(list(cls.astype("int")))
-        # output = list(counter.items())
-        # output = dict(map(lambda x: (labels[x[0]],x[1]), output))
-        result = self.create_segmented_image(image, cls, masks)
-        return result
+        if masks is None:
+            return image, {}
+        counter = Counter(list(cls.astype("int")))
+        counted = list(counter.items())
+        counted = dict(map(lambda x: (labels[x[0]], x[1]), counted))
+        segmented_image = self.create_segmented_image(image, cls, masks)
+        return segmented_image, counted

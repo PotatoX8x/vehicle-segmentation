@@ -5,16 +5,33 @@ imgInput.addEventListener("change", (event) => {
     const formData = new FormData();
     formData.append('file', image);
 
+    // fetch("/vehicle_segment", {
+    //     method: 'POST',
+    //     body: formData
+    // })
+    // .then(response => response.blob())
+    // .then(blob => {
+    //     const imgOutput = document.getElementById("img_output");
+    //     imgOutput.src = URL.createObjectURL(blob);
+    // })
+    // .catch(error => {
+    //     console.error('Error:', error);
+    // });
     fetch("/vehicle_segment", {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.blob())
-    .then(blob => {
+            method: 'POST',
+            body: formData
+        }
+    )
+    .then(response => response.json())
+    .then(data => {
+        const textData = data.predicted;
+        const imageData = data.image;
+        
         const imgOutput = document.getElementById("img_output");
-        imgOutput.src = URL.createObjectURL(blob);
+        imgOutput.src = 'data:image/jpeg;base64,' + imageData;
+
+        const textOutput = document.getElementById("text_output");
+        textOutput.innerHTML = textData;
     })
-    .catch(error => {
-        console.error('Error:', error);
-    });
+    .catch(error => console.error('Error:', error));
 });
