@@ -14,7 +14,8 @@ from starlette.responses import Response, FileResponse, JSONResponse
 from VehicleSegmentor import VehicleSegmentor
 import json
 import base64
-
+from fastapi.encoders import jsonable_encoder
+import time
 vehicle_segmentor = VehicleSegmentor()
 
 app = FastAPI()
@@ -26,10 +27,11 @@ def process_request_image(file):
     return image
 
 def process_response_image(image):
-    _, encoded_image = cv2.imencode('.PNG', image)
-    encoded_image = encoded_image.tobytes()
-    #encoded_image = base64.b64encode(encoded_image)
-    return encoded_image.decode('ISO-8859-1')
+    _, encoded_image = cv2.imencode('.png', image)
+    encoded_image_bytes = encoded_image.tobytes()
+    encoded_image_base64 = base64.b64encode(encoded_image_bytes)
+    decoded_image_base64 = encoded_image_base64.decode('utf-8')
+    return decoded_image_base64
 
 @app.get("/")
 async def read_index():
@@ -42,12 +44,14 @@ async def image_detect(file: UploadFile):
 
     segmented_image, counted = vehicle_segmentor.predict(image)
     encoded_image = process_response_image(segmented_image)
-    #return Response(content = encoded_image, headers = counted, media_type="image/png")
+    counted = jsonable_encoder(counted)
+
     response = {
         "image": encoded_image,
-        "predictions": counted
+        "predicted": counted
     }
-    return JSONResponse(content = response, media_type="image/png")
+
+    return JSONResponse(content = response)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

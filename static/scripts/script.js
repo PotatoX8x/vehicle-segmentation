@@ -5,18 +5,6 @@ imgInput.addEventListener("change", (event) => {
     const formData = new FormData();
     formData.append('file', image);
 
-    // fetch("/vehicle_segment", {
-    //     method: 'POST',
-    //     body: formData
-    // })
-    // .then(response => response.blob())
-    // .then(blob => {
-    //     const imgOutput = document.getElementById("img_output");
-    //     imgOutput.src = URL.createObjectURL(blob);
-    // })
-    // .catch(error => {
-    //     console.error('Error:', error);
-    // });
     fetch("/vehicle_segment", {
             method: 'POST',
             body: formData
@@ -28,10 +16,10 @@ imgInput.addEventListener("change", (event) => {
         const imageData = data.image;
         
         const imgOutput = document.getElementById("img_output");
-        imgOutput.src = 'data:image/jpeg;base64,' + imageData;
+        imgOutput.src = 'data:image/png;base64,' + imageData;
 
         const textOutput = document.getElementById("text_output");
-        textOutput.innerHTML = textData;
+        textOutput.textContent = JSON.stringify(textData, undefined, 2);
     })
     .catch(error => console.error('Error:', error));
 });
