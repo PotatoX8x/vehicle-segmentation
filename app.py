@@ -1,21 +1,15 @@
 
 import uvicorn
-from ultralytics import YOLO
-from PIL import Image
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, UploadFile
-from starlette.responses import Response, FileResponse, JSONResponse
-
+from starlette.responses import FileResponse, JSONResponse
 from VehicleSegmentor import VehicleSegmentor
-import json
 import base64
 from fastapi.encoders import jsonable_encoder
-import time
+
 vehicle_segmentor = VehicleSegmentor()
 
 app = FastAPI()

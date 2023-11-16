@@ -1,6 +1,5 @@
 from ultralytics import YOLO
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 from ultralytics.utils.ops import scale_image
 from collections import Counter
