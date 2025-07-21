@@ -1,3 +1,14 @@
+# Ignore the environment
+.venv
+.env
+
+# Trained models 
 /models
-/dataset
-/runs
+runs/
+**.pt
+
+# Folder with the image data
+/data
+
+# Python cache files
+__pycache__

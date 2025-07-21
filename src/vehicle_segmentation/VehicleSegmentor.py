@@ -5,33 +5,38 @@ from ultralytics.utils.ops import scale_image
 from collections import Counter
 
 class VehicleSegmentor:
-    def __init__(self) -> None:
-        self.model = YOLO('models/vehicle_seg.pt')
-        self.labels = {0: 'Ambulance', 1: 'Bus', 2: 'Car', 3: 'Motorcycle', 4: 'Truck'}
-        
-        self.colors = [(89, 161, 197),(67, 161, 255),(19, 222, 24),(186, 55, 2),(167, 146, 11)]
+    def __init__(self, model_path: str, labels: dict, colors: list) -> None:
+        self.model = YOLO(model_path)
+        self.labels = labels
+        self.colors = colors
 
     def classify_image(self, image, conf):
         result = self.model(image, conf=conf)[0]
+
+        # If nothing is detected, return Nones
         if result.masks is None:
             return None, None, None, None, None
-        # detection
+        
+        # Detection
         cls = result.boxes.cls.cpu().numpy()
         probs = result.boxes.conf.cpu().numpy() 
         boxes = result.boxes.xyxy.cpu().numpy() 
         labels = result.names
 
-        # segmentation
+        # Segmentation
         masks = result.masks.data.cpu().numpy()
         masks = np.moveaxis(masks, 0, -1)
 
-        # rescale masks to original image
+        # Rescale masks to original image
         masks = scale_image(masks, result.masks.orig_shape)
         masks = np.moveaxis(masks, -1, 0)
 
         return boxes, masks, cls, probs, labels
 
     def overlay_mask(self, image, mask, color, alpha):
+        """
+        Crates a prediction mask overlay that will be added to the image later
+        """
         color = color[::-1]
         colored_mask = np.expand_dims(mask, 0).repeat(3, axis=0)
         colored_mask = np.moveaxis(colored_mask, 0, -1)
@@ -42,12 +47,18 @@ class VehicleSegmentor:
         return image_combined
 
     def create_segmented_image(self, image, cls, masks):
+        """
+        Overlays the prediction mask over the image
+        """
         image_with_masks = np.copy(image)
         for i, mask in enumerate(masks):
             image_with_masks = self.overlay_mask(image_with_masks, mask, color=self.colors[int(cls[i])], alpha=0.5)
         return image_with_masks
 
     def predict(self, image):
+        """
+        Wrapper for the segmentation logic
+        """
         boxes, masks, cls, probs, labels = self.classify_image(image, conf=0.60)
         if masks is None:
             return image, {}

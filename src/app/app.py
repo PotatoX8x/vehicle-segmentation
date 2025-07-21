@@ -1,35 +1,29 @@
 
 import uvicorn
-import cv2
-import numpy as np
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, UploadFile
 from starlette.responses import FileResponse, JSONResponse
-from VehicleSegmentor import VehicleSegmentor
-import base64
+from src.vehicle_segmentation.VehicleSegmentor import VehicleSegmentor
 from fastapi.encoders import jsonable_encoder
 
-vehicle_segmentor = VehicleSegmentor()
+from src.app.app_utils import process_request_image, process_response_image
+
+# Prediction config
+model_path = "models/yolo_seg.pt"
+labels = {0: 'Ambulance', 1: 'Bus', 2: 'Car', 3: 'Motorcycle', 4: 'Truck'}
+colors = [(89, 161, 197),(67, 161, 255),(19, 222, 24),(186, 55, 2),(167, 146, 11)]
+
+vehicle_segmentor = VehicleSegmentor(model_path, labels, colors)
+
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-def process_request_image(file):
-    np_image = np.frombuffer(file, np.uint8)
-    image = cv2.imdecode(np_image, cv2.IMREAD_COLOR)
-    return image
-
-def process_response_image(image):
-    _, encoded_image = cv2.imencode('.png', image)
-    encoded_image_bytes = encoded_image.tobytes()
-    encoded_image_base64 = base64.b64encode(encoded_image_bytes)
-    decoded_image_base64 = encoded_image_base64.decode('utf-8')
-    return decoded_image_base64
+app.mount("/static", StaticFiles(directory="src/app/static"), name="static")
 
 @app.get("/")
 async def read_index():
-    return FileResponse('index.html')
+    return FileResponse('src/app/index.html')
 
 @app.post("/vehicle_segment")
 async def image_detect(file: UploadFile):
@@ -38,6 +32,8 @@ async def image_detect(file: UploadFile):
 
     segmented_image, counted = vehicle_segmentor.predict(image)
     encoded_image = process_response_image(segmented_image)
+
+    # Counts for each class predicted
     counted = jsonable_encoder(counted)
 
     response = {
