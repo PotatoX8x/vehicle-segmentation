@@ -5,10 +5,9 @@ from ultralytics.utils.ops import scale_image
 from collections import Counter
 
 class VehicleSegmentor:
-    def __init__(self, model_path: str, labels: dict, colors: list) -> None:
+    def __init__(self, model_path: str, label_config: dict) -> None:
         self.model = YOLO(model_path)
-        self.labels = labels
-        self.colors = colors
+        self.label_config = label_config
 
     def classify_image(self, image, conf):
         result = self.model(image, conf=conf)[0]
@@ -52,7 +51,7 @@ class VehicleSegmentor:
         """
         image_with_masks = np.copy(image)
         for i, mask in enumerate(masks):
-            image_with_masks = self.overlay_mask(image_with_masks, mask, color=self.colors[int(cls[i])], alpha=0.5)
+            image_with_masks = self.overlay_mask(image_with_masks, mask, color=self.label_config[int(cls[i])][1], alpha=0.5)
         return image_with_masks
 
     def predict(self, image):
